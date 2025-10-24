@@ -1,6 +1,7 @@
 # PC Hardware Monitor for ESP32-C6
 
 Real-time PC hardware monitoring displayed on an ESP32-C6 with 1.47" ST7789 LCD. Monitors CPU, RAM, temperature, GPU, network, fan speed, and battery stats via serial communication.
+![Project preview](image.jpeg)
 
 ## Hardware Requirements
 
