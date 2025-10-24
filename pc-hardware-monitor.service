@@ -1,0 +1,15 @@
+[Unit]
+Description=PC Hardware Monitor for ESP32
+After=network.target
+
+[Service]
+Type=simple
+User=machetie
+WorkingDirectory=/home/machetie/Documents/WaveShareC6lvglexample-/NewYearExample
+ExecStart=/usr/bin/python3 /home/machetie/Documents/WaveShareC6lvglexample-/NewYearExample/pc_monitor.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
