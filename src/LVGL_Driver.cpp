@@ -55,7 +55,7 @@ void Lvgl_Init(void)
   disp_drv.flush_cb = Lvgl_Display_LCD;
   disp_drv.full_refresh = 0;       /**< 0: Partial refresh (required for rotation)*/
   disp_drv.sw_rotate = 1;          /**< 1: Enable software rotation*/
-  disp_drv.rotated = LV_DISP_ROT_90;  /**< Rotate 90 degrees for landscape*/
+  disp_drv.rotated = LV_DISP_ROT_270;  /**< Rotate 270 degrees for landscape (flipped)*/
   disp_drv.draw_buf = &draw_buf;
   lv_disp_t *disp = lv_disp_drv_register( &disp_drv );
 

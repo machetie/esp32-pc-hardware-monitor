@@ -1,14 +1,16 @@
 [Unit]
 Description=PC Hardware Monitor for ESP32
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=machetie
-WorkingDirectory=/home/machetie/Documents/WaveShareC6lvglexample-/NewYearExample
-ExecStart=/usr/bin/python3 /home/machetie/Documents/WaveShareC6lvglexample-/NewYearExample/pc_monitor.py
+WorkingDirectory=/home/machetie/Documents/NoTouchC6/NewYearExample
+ExecStart=/usr/bin/env python3 /home/machetie/Documents/NoTouchC6/NewYearExample/pc_monitor.py
 Restart=always
 RestartSec=5
+Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target

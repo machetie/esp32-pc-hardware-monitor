@@ -9,16 +9,25 @@ static lv_color_t get_pct_color(float pct) {
     if (pct < 0.0f) pct = 0.0f;
     if (pct > 100.0f) pct = 100.0f;
 
-    if (pct < 60.0f) {
-        // Green→Yellow (0–60%)
-        // At pct=0: ratio=0 → green, At pct=60: ratio=255 → yellow
-        uint8_t ratio = (uint8_t)(pct / 60.0f * 255.0f);
+    // 0-25%: Cyan -> Green (Cool/Idle)
+    if (pct < 25.0f) {
+        uint8_t ratio = (uint8_t)(pct / 25.0f * 255.0f);
+        return lv_color_mix(lv_color_make(0, 255, 0), lv_color_make(0, 255, 255), ratio);
+    }
+    // 25-50%: Green -> Yellow (Moderate)
+    else if (pct < 50.0f) {
+        uint8_t ratio = (uint8_t)((pct - 25.0f) / 25.0f * 255.0f);
         return lv_color_mix(lv_color_make(255, 255, 0), lv_color_make(0, 255, 0), ratio);
-    } else {
-        // Yellow→Red (60–100%)
-        // At pct=60: ratio=0 → yellow, At pct=100: ratio=255 → red
-        uint8_t ratio = (uint8_t)((pct - 60.0f) / 40.0f * 255.0f);
-        return lv_color_mix(lv_color_make(255, 0, 0), lv_color_make(255, 255, 0), ratio);
+    }
+    // 50-75%: Yellow -> Orange (High)
+    else if (pct < 75.0f) {
+         uint8_t ratio = (uint8_t)((pct - 50.0f) / 25.0f * 255.0f);
+         return lv_color_mix(lv_color_make(255, 165, 0), lv_color_make(255, 255, 0), ratio);
+    }
+    // 75-100%: Orange -> Red (Critical)
+    else {
+        uint8_t ratio = (uint8_t)((pct - 75.0f) / 25.0f * 255.0f);
+        return lv_color_mix(lv_color_make(255, 0, 0), lv_color_make(255, 165, 0), ratio);
     }
 }
 
@@ -41,7 +50,7 @@ lv_obj_t * ui_TempLabel_Value;
 lv_obj_t * ui_NetLabel_Prefix;
 lv_obj_t * ui_NetLabel_Value;
 
-lv_obj_t * ui_BatLabel_Prefix;
+lv_obj_t * ui_BatIcon;
 lv_obj_t * ui_BatLabel_Value;
 
 void ui_hardware_monitor_init(void) {
@@ -55,95 +64,93 @@ void ui_hardware_monitor_init(void) {
     // Value labels: Dynamic colored text
     // VT323 32pt font, Y=2 start, 28px spacing between lines
 
-    // Line 1: CPU Information (Y=2)
-    ui_CPULabel_Prefix = lv_label_create(ui_HWMonScreen);
-    lv_obj_set_x(ui_CPULabel_Prefix, 10);
-    lv_obj_set_y(ui_CPULabel_Prefix, 2);
-    lv_label_set_text(ui_CPULabel_Prefix, "CPU:");
-    lv_obj_set_style_text_color(ui_CPULabel_Prefix, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_CPULabel_Prefix, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    ui_CPULabel_Value = lv_label_create(ui_HWMonScreen);
-    lv_obj_set_x(ui_CPULabel_Value, 60);
-    lv_obj_set_y(ui_CPULabel_Value, 2);
-    lv_label_set_text(ui_CPULabel_Value, "0.0%");
-    lv_obj_set_style_text_color(ui_CPULabel_Value, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_CPULabel_Value, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    // Line 2: GPU Information (Y=30)
+    // Line 1: GPU Information (Y=5)
     ui_GPULabel_Prefix = lv_label_create(ui_HWMonScreen);
     lv_obj_set_x(ui_GPULabel_Prefix, 10);
-    lv_obj_set_y(ui_GPULabel_Prefix, 30);
-    lv_label_set_text(ui_GPULabel_Prefix, "GPU:");
-    lv_obj_set_style_text_color(ui_GPULabel_Prefix, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_GPULabel_Prefix, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_y(ui_GPULabel_Prefix, 5);
+    lv_label_set_text(ui_GPULabel_Prefix, LV_SYMBOL_IMAGE);
+    lv_obj_set_style_text_color(ui_GPULabel_Prefix, lv_color_hex(0x9400D3), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_GPULabel_Prefix, &lv_font_montserrat_30, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_GPULabel_Value = lv_label_create(ui_HWMonScreen);
     lv_obj_set_x(ui_GPULabel_Value, 60);
-    lv_obj_set_y(ui_GPULabel_Value, 30);
+    lv_obj_set_y(ui_GPULabel_Value, 5);
     lv_label_set_text(ui_GPULabel_Value, "0.0%");
     lv_obj_set_style_text_color(ui_GPULabel_Value, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_GPULabel_Value, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_GPULabel_Value, &lv_font_montserrat_32, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    // Line 3: RAM Information (Y=58)
+    // Line 2: CPU Information (Y=38)
+    ui_CPULabel_Prefix = lv_label_create(ui_HWMonScreen);
+    lv_obj_set_x(ui_CPULabel_Prefix, 10);
+    lv_obj_set_y(ui_CPULabel_Prefix, 38);
+    lv_label_set_text(ui_CPULabel_Prefix, LV_SYMBOL_SETTINGS);
+    lv_obj_set_style_text_color(ui_CPULabel_Prefix, lv_color_hex(0x9400D3), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_CPULabel_Prefix, &lv_font_montserrat_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_CPULabel_Value = lv_label_create(ui_HWMonScreen);
+    lv_obj_set_x(ui_CPULabel_Value, 60);
+    lv_obj_set_y(ui_CPULabel_Value, 38);
+    lv_label_set_text(ui_CPULabel_Value, "0.0%");
+    lv_obj_set_style_text_color(ui_CPULabel_Value, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_CPULabel_Value, &lv_font_montserrat_32, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // Line 3: RAM Information (Y=71)
     ui_RAMLabel_Prefix = lv_label_create(ui_HWMonScreen);
     lv_obj_set_x(ui_RAMLabel_Prefix, 10);
-    lv_obj_set_y(ui_RAMLabel_Prefix, 58);
-    lv_label_set_text(ui_RAMLabel_Prefix, "RAM:");
-    lv_obj_set_style_text_color(ui_RAMLabel_Prefix, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_RAMLabel_Prefix, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_y(ui_RAMLabel_Prefix, 71);
+    lv_label_set_text(ui_RAMLabel_Prefix, LV_SYMBOL_SD_CARD);
+    lv_obj_set_style_text_color(ui_RAMLabel_Prefix, lv_color_hex(0x9400D3), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_RAMLabel_Prefix, &lv_font_montserrat_30, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_RAMLabel_Value = lv_label_create(ui_HWMonScreen);
     lv_obj_set_x(ui_RAMLabel_Value, 60);
-    lv_obj_set_y(ui_RAMLabel_Value, 58);
-    lv_label_set_text(ui_RAMLabel_Value, "0.0%");
+    lv_obj_set_y(ui_RAMLabel_Value, 71);
+    lv_label_set_text(ui_RAMLabel_Value, "0%");
     lv_obj_set_style_text_color(ui_RAMLabel_Value, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_RAMLabel_Value, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_RAMLabel_Value, &lv_font_montserrat_32, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    // Line 4: Temperature Information (Y=86)
+    // Line 4: Temperature Information (Y=104)
     ui_TempLabel_Prefix = lv_label_create(ui_HWMonScreen);
     lv_obj_set_x(ui_TempLabel_Prefix, 10);
-    lv_obj_set_y(ui_TempLabel_Prefix, 86);
-    lv_label_set_text(ui_TempLabel_Prefix, "TEMP:");
-    lv_obj_set_style_text_color(ui_TempLabel_Prefix, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_TempLabel_Prefix, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_y(ui_TempLabel_Prefix, 104);
+    lv_label_set_text(ui_TempLabel_Prefix, LV_SYMBOL_TINT);
+    lv_obj_set_style_text_color(ui_TempLabel_Prefix, lv_color_hex(0x9400D3), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_TempLabel_Prefix, &lv_font_montserrat_30, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_TempLabel_Value = lv_label_create(ui_HWMonScreen);
-    lv_obj_set_x(ui_TempLabel_Value, 75);
-    lv_obj_set_y(ui_TempLabel_Value, 86);
-    lv_label_set_text(ui_TempLabel_Value, "0.0°C");
+    lv_obj_set_x(ui_TempLabel_Value, 60);
+    lv_obj_set_y(ui_TempLabel_Value, 104);
+    lv_label_set_text(ui_TempLabel_Value, "0°C");
     lv_obj_set_style_text_color(ui_TempLabel_Value, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_TempLabel_Value, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_TempLabel_Value, &lv_font_montserrat_32, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    // Line 5: Network Information (Y=114)
+    // Line 5: Network Information (Y=137)
     ui_NetLabel_Prefix = lv_label_create(ui_HWMonScreen);
     lv_obj_set_x(ui_NetLabel_Prefix, 10);
-    lv_obj_set_y(ui_NetLabel_Prefix, 114);
-    lv_label_set_text(ui_NetLabel_Prefix, "NET:");
-    lv_obj_set_style_text_color(ui_NetLabel_Prefix, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_NetLabel_Prefix, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_y(ui_NetLabel_Prefix, 137);
+    lv_label_set_text(ui_NetLabel_Prefix, LV_SYMBOL_WIFI);
+    lv_obj_set_style_text_color(ui_NetLabel_Prefix, lv_color_hex(0x9400D3), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_NetLabel_Prefix, &lv_font_montserrat_30, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_NetLabel_Value = lv_label_create(ui_HWMonScreen);
     lv_obj_set_x(ui_NetLabel_Value, 60);
-    lv_obj_set_y(ui_NetLabel_Value, 114);
+    lv_obj_set_y(ui_NetLabel_Value, 137);
     lv_label_set_text(ui_NetLabel_Value, "(not available)");
     lv_obj_set_style_text_color(ui_NetLabel_Value, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_NetLabel_Value, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_NetLabel_Value, &lv_font_montserrat_32, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    // Line 6: Battery Information (Y=142)
-    ui_BatLabel_Prefix = lv_label_create(ui_HWMonScreen);
-    lv_obj_set_x(ui_BatLabel_Prefix, 10);
-    lv_obj_set_y(ui_BatLabel_Prefix, 142);
-    lv_label_set_text(ui_BatLabel_Prefix, "BAT:");
-    lv_obj_set_style_text_color(ui_BatLabel_Prefix, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_BatLabel_Prefix, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Line 6: Battery Information (Top Right)
+    ui_BatIcon = lv_label_create(ui_HWMonScreen);
+    lv_obj_align(ui_BatIcon, LV_ALIGN_TOP_RIGHT, -5, 5);
+    lv_label_set_text(ui_BatIcon, LV_SYMBOL_BATTERY_FULL);
+    lv_obj_set_style_text_color(ui_BatIcon, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_BatIcon, &lv_font_montserrat_30, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_BatLabel_Value = lv_label_create(ui_HWMonScreen);
-    lv_obj_set_x(ui_BatLabel_Value, 60);
-    lv_obj_set_y(ui_BatLabel_Value, 142);
-    lv_label_set_text(ui_BatLabel_Value, "(not available)");
+    lv_obj_align_to(ui_BatLabel_Value, ui_BatIcon, LV_ALIGN_OUT_LEFT_MID, -5, 0);
+    lv_label_set_text(ui_BatLabel_Value, "");
     lv_obj_set_style_text_color(ui_BatLabel_Value, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_BatLabel_Value, &lv_font_vt323_32, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_BatLabel_Value, &lv_font_montserrat_32, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     // Load the screen
     lv_disp_load_scr(ui_HWMonScreen);
@@ -192,9 +199,9 @@ void ui_update_ram(float percent, float used_gb, float total_gb) {
     char text[48];
     // Display RAM percentage and memory usage - value only
     if (used_gb > 0.0 && total_gb > 0.0) {
-        snprintf(text, sizeof(text), "%.1f%% %.1f/%.1fGB", percent, used_gb, total_gb);
+        snprintf(text, sizeof(text), "%.0f%% %.1f/%.1fGB", percent, used_gb, total_gb);
     } else {
-        snprintf(text, sizeof(text), "%.1f%%", percent);
+        snprintf(text, sizeof(text), "%.0f%%", percent);
     }
     lv_label_set_text(ui_RAMLabel_Value, text);
 
@@ -207,47 +214,42 @@ void ui_update_temp(float celsius, int fan_rpm) {
     char text[48];
     // Display temperature and fan speed - value only
     if (fan_rpm > 0) {
-        snprintf(text, sizeof(text), "%.1f°C %drpm", celsius, fan_rpm);
+        snprintf(text, sizeof(text), "%.0f°C %dRPM", celsius, fan_rpm);
     } else {
-        snprintf(text, sizeof(text), "%.1f°C", celsius);
+        snprintf(text, sizeof(text), "%.0f°C", celsius);
     }
     lv_label_set_text(ui_TempLabel_Value, text);
 
-    // Color: blue (<50°C), green (50–70°C), yellow (70–85°C), red (≥85°C)
-    // Apply to value label only
-    lv_color_t col;
-    if (celsius >= 85.0f) {
-        col = lv_color_make(255, 0, 0);  // Red - Hot! (R=255, G=0, B=0)
-    } else if (celsius >= 70.0f) {
-        col = lv_color_make(255, 255, 0);  // Yellow - Warm (R=255, G=255, B=0)
-    } else if (celsius >= 50.0f) {
-        col = lv_color_make(0, 255, 0);  // Green - Normal (R=0, G=255, B=0)
-    } else {
-        col = lv_color_make(0, 174, 239);  // Blue - Cool (R=0, G=174, B=239)
-    }
+    // Color: Dynamic based on temperature
+    // 30°C (0%) to 90°C (100%)
+    float temp_pct = (celsius - 30.0f) / (90.0f - 30.0f) * 100.0f;
+    lv_color_t col = get_pct_color(temp_pct);
+    
     lv_obj_set_style_text_color(ui_TempLabel_Value, col, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
 void ui_update_network(float download_mbps, float upload_mbps) {
     char text[64];
+    const char *down_sym = LV_SYMBOL_DOWN;
+    const char *up_sym = LV_SYMBOL_UP;
     
     // Convert MB/s to KB/s
     float download_kbps = download_mbps * 1024.0f;
     float upload_kbps = upload_mbps * 1024.0f;
     
-    // Dynamic display: show KB/s for speeds <1 MB/s, otherwise show MB/s
+    // Note: Arrows are not in Orbitron font, using D/U
     if (download_mbps < 1.0f && upload_mbps < 1.0f) {
-        // Both speeds low - show in KB/s
-        snprintf(text, sizeof(text), "D%.0f U%.0f KB/s", download_kbps, upload_kbps);
+        // Both speeds low - show in kB/s
+        snprintf(text, sizeof(text), "%s%.0fk %s%.0fk", down_sym, download_kbps, up_sym, upload_kbps);
     } else if (download_mbps < 1.0f) {
         // Download low, upload high
-        snprintf(text, sizeof(text), "D%.0fKB U%.1fMB/s", download_kbps, upload_mbps);
+        snprintf(text, sizeof(text), "%s%.0fk %s%.1fM", down_sym, download_kbps, up_sym, upload_mbps);
     } else if (upload_mbps < 1.0f) {
         // Download high, upload low
-        snprintf(text, sizeof(text), "D%.1fMB U%.0fKB/s", download_mbps, upload_kbps);
+        snprintf(text, sizeof(text), "%s%.1fM %s%.0fk", down_sym, download_mbps, up_sym, upload_kbps);
     } else {
         // Both high - show in MB/s
-        snprintf(text, sizeof(text), "D%.1f U%.1f MB/s", download_mbps, upload_mbps);
+        snprintf(text, sizeof(text), "%s%.1fM %s%.1fM", down_sym, download_mbps, up_sym, upload_mbps);
     }
     
     lv_label_set_text(ui_NetLabel_Value, text);
@@ -269,24 +271,37 @@ void ui_update_network(float download_mbps, float upload_mbps) {
 }
 
 void ui_update_battery(int percent, float power_watts) {
-    char text[48];
-    // Display battery percentage and power - value only
-    if (percent >= 0 && power_watts >= 0.0) {
-        snprintf(text, sizeof(text), "%d%% %.1fW", percent, power_watts);
+    char text[16];
+    // Display battery percentage - value only
+    if (percent >= 0) {
+        snprintf(text, sizeof(text), "%d%%", percent);
     } else {
-        snprintf(text, sizeof(text), "(not available)");
+        snprintf(text, sizeof(text), "--%%");
     }
     lv_label_set_text(ui_BatLabel_Value, text);
+    lv_obj_align_to(ui_BatLabel_Value, ui_BatIcon, LV_ALIGN_OUT_LEFT_MID, -5, 0);
 
-    // Set color based on battery percentage (value label only)
+    // Set icon based on percentage
+    const char* symbol = LV_SYMBOL_BATTERY_EMPTY;
+    if (percent > 90) symbol = LV_SYMBOL_BATTERY_FULL;
+    else if (percent > 60) symbol = LV_SYMBOL_BATTERY_3;
+    else if (percent > 30) symbol = LV_SYMBOL_BATTERY_2;
+    else if (percent > 10) symbol = LV_SYMBOL_BATTERY_1;
+    
+    lv_label_set_text(ui_BatIcon, symbol);
+
+    // Set color based on battery percentage (icon and value)
     // Reverse gradient: red at low battery
     if (percent >= 0) {
         // Invert the percentage for battery: 100% = green, 0% = red
         float inverted_pct = 100.0f - (float)percent;
         lv_color_t col = get_pct_color(inverted_pct);
+        lv_obj_set_style_text_color(ui_BatIcon, col, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_color(ui_BatLabel_Value, col, LV_PART_MAIN | LV_STATE_DEFAULT);
     } else {
         // Gray color for unavailable
-        lv_obj_set_style_text_color(ui_BatLabel_Value, lv_color_make(128, 128, 128), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_color_t gray = lv_color_make(128, 128, 128);
+        lv_obj_set_style_text_color(ui_BatIcon, gray, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_color(ui_BatLabel_Value, gray, LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 }

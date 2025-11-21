@@ -214,24 +214,31 @@ class SystemMonitor:
     def get_gpu_usage(self) -> float:
         """Get GPU usage percentage from DRM sysfs interface. Returns 0.0 if unavailable."""
         if not self.gpu_device_path:
-            return 0.0
+            self._find_gpu_device()
+            if not self.gpu_device_path:
+                return 0.0
+
+        def _read_gpu_usage(path: str) -> float:
+            with open(path, 'r') as f:
+                return float(int(f.read().strip()))
 
         try:
-            with open(self.gpu_device_path, 'r') as f:
-                gpu_percent = int(f.read().strip())
-                return float(gpu_percent)
-        except FileNotFoundError:
-            # GPU device no longer available
-            return 0.0
-        except PermissionError:
-            # No permission to read GPU stats
-            return 0.0
+            return _read_gpu_usage(self.gpu_device_path)
+        except (FileNotFoundError, PermissionError):
+            # Device path invalid after suspend/resume; rescan once.
+            self.gpu_device_path = None
+            self._find_gpu_device()
+            if self.gpu_device_path:
+                try:
+                    return _read_gpu_usage(self.gpu_device_path)
+                except (FileNotFoundError, PermissionError):
+                    pass
         except ValueError as e:
             print(f"Error parsing GPU usage value: {e}")
-            return 0.0
         except Exception as e:
             print(f"Error reading GPU usage: {e}")
-            return 0.0
+
+        return 0.0
     
     def get_ram_usage(self) -> Tuple[float, float, float]:
         """Get RAM usage percentage and used/total in GB"""

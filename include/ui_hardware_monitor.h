@@ -26,7 +26,7 @@ extern lv_obj_t * ui_TempLabel_Value;
 extern lv_obj_t * ui_NetLabel_Prefix;
 extern lv_obj_t * ui_NetLabel_Value;
 
-extern lv_obj_t * ui_BatLabel_Prefix;
+extern lv_obj_t * ui_BatIcon;
 extern lv_obj_t * ui_BatLabel_Value;
 
 // Functions
