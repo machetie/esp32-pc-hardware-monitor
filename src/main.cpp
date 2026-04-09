@@ -11,7 +11,7 @@
 
 // Power saving settings
 #define POWER_SAVE_BACKLIGHT 0    // Backlight level when disconnected (0 = off)
-#define NORMAL_BACKLIGHT 5         // Normal backlight level
+#define NORMAL_BACKLIGHT 2         // Normal backlight level (50% of original 5)
 #define POWER_SAVE_DELAY_MS 10000  // 10 seconds after disconnect before power saving
 #define ENABLE_CPU_FREQ_SCALING true  // Enable CPU frequency reduction
 
@@ -75,7 +75,7 @@ void setup() {
   LCD_Init();
   Lvgl_Init();
   ui_hardware_monitor_init();
-  Set_Backlight(5);
+  Set_Backlight(NORMAL_BACKLIGHT);
 
   Serial.println("Hardware Monitor Started");
   Serial.println("Waiting for data from PC...");

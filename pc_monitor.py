@@ -21,8 +21,9 @@ class SystemMonitor:
         self.fan_sensor_path = None
         self.battery_path = None
         self.network_interface = None
-        self.prev_net_stats = None
-        self.prev_net_time = None
+        self.net_rx_history = []   # [(timestamp, rx_bytes), ...]
+        self.net_tx_history = []   # [(timestamp, tx_bytes), ...]
+        self.net_window_sec = 3.0  # Rolling average window in seconds
         self.gpu_device_path = None
 
         # Initialize sensors
@@ -301,7 +302,12 @@ class SystemMonitor:
             return 0
 
     def get_network_speed(self) -> Tuple[float, float]:
-        """Get network download and upload speed in MB/s (with 1 decimal precision)"""
+        """Get network download and upload speed in MB/s using a rolling window average.
+
+        Uses a sliding window (default 3s) over accumulated byte counts to smooth
+        out bursty traffic that would otherwise read as 0 in a 1-second point-in-time
+        sample.
+        """
         if not self.network_interface:
             return (0.0, 0.0)
 
@@ -309,7 +315,6 @@ class SystemMonitor:
             rx_path = f'/sys/class/net/{self.network_interface}/statistics/rx_bytes'
             tx_path = f'/sys/class/net/{self.network_interface}/statistics/tx_bytes'
 
-            # Verify paths exist
             if not os.path.exists(rx_path) or not os.path.exists(tx_path):
                 print(f"Error: Network statistics files not found for {self.network_interface}")
                 return (0.0, 0.0)
@@ -321,40 +326,33 @@ class SystemMonitor:
 
             current_time = time.time()
 
-            # First reading - store baseline
-            if self.prev_net_stats is None:
-                self.prev_net_stats = (rx_bytes, tx_bytes)
-                self.prev_net_time = current_time
-                # Debug: Print initial values
-                # print(f"Network baseline: RX={rx_bytes} bytes, TX={tx_bytes} bytes")
+            # Append current sample to history
+            self.net_rx_history.append((current_time, rx_bytes))
+            self.net_tx_history.append((current_time, tx_bytes))
+
+            # Evict samples older than the rolling window
+            cutoff = current_time - self.net_window_sec
+            self.net_rx_history = [(t, b) for t, b in self.net_rx_history if t >= cutoff]
+            self.net_tx_history = [(t, b) for t, b in self.net_tx_history if t >= cutoff]
+
+            # Need at least two samples to compute a rate
+            if len(self.net_rx_history) < 2:
                 return (0.0, 0.0)
 
-            # Calculate speed
-            time_delta = current_time - self.prev_net_time
-            if time_delta > 0:
-                rx_bytes_delta = rx_bytes - self.prev_net_stats[0]
-                tx_bytes_delta = tx_bytes - self.prev_net_stats[1]
+            # Use the oldest and newest samples in the window
+            oldest_time, oldest_rx = self.net_rx_history[0]
+            newest_time, newest_rx = self.net_rx_history[-1]
+            _, oldest_tx = self.net_tx_history[0]
+            _, newest_tx = self.net_tx_history[-1]
 
-                # Calculate speed in MB/s
-                rx_speed = rx_bytes_delta / time_delta / 1048576  # Convert to MB/s
-                tx_speed = tx_bytes_delta / time_delta / 1048576  # Convert to MB/s
-
-                # Clamp negative values to 0 (can happen if interface resets)
-                rx_speed = max(0.0, rx_speed)
-                tx_speed = max(0.0, tx_speed)
-
-                # Update previous values
-                self.prev_net_stats = (rx_bytes, tx_bytes)
-                self.prev_net_time = current_time
-
-                # Debug: Print speed calculation
-                # print(f"Network speed: RX={rx_speed:.2f} MB/s ({rx_bytes_delta} bytes in {time_delta:.2f}s), "
-                #       f"TX={tx_speed:.2f} MB/s ({tx_bytes_delta} bytes in {time_delta:.2f}s)")
-
-                # Return with 2 decimal precision for better small-value visibility
-                return (round(rx_speed, 2), round(tx_speed, 2))
-            else:
+            window = newest_time - oldest_time
+            if window <= 0:
                 return (0.0, 0.0)
+
+            rx_speed = max(0.0, (newest_rx - oldest_rx) / window / 1048576)
+            tx_speed = max(0.0, (newest_tx - oldest_tx) / window / 1048576)
+
+            return (round(rx_speed, 2), round(tx_speed, 2))
 
         except FileNotFoundError as e:
             print(f"Error: Network interface {self.network_interface} statistics not found: {e}")

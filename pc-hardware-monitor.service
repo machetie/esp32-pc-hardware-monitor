@@ -6,8 +6,8 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=machetie
-WorkingDirectory=/home/machetie/Documents/NoTouchC6/NewYearExample
-ExecStart=/usr/bin/env python3 /home/machetie/Documents/NoTouchC6/NewYearExample/pc_monitor.py
+WorkingDirectory=/home/machetie/Documents/git/esp32-pc-hardware-monitor
+ExecStart=/usr/bin/env python3 /home/machetie/Documents/git/esp32-pc-hardware-monitor/pc_monitor.py
 Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1
