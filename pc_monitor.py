@@ -309,7 +309,9 @@ class SystemMonitor:
         sample.
         """
         if not self.network_interface:
-            return (0.0, 0.0)
+            self._find_network_interface()
+            if not self.network_interface:
+                return (0.0, 0.0)
 
         try:
             rx_path = f'/sys/class/net/{self.network_interface}/statistics/rx_bytes'

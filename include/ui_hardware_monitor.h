@@ -7,28 +7,6 @@ extern "C" {
 
 #include <lvgl.h>
 
-// UI Elements for Hardware Monitor
-extern lv_obj_t * ui_HWMonScreen;
-
-// Dual-label approach: Prefix (white) + Value (dynamic color)
-extern lv_obj_t * ui_CPULabel_Prefix;
-extern lv_obj_t * ui_CPULabel_Value;
-
-extern lv_obj_t * ui_GPULabel_Prefix;
-extern lv_obj_t * ui_GPULabel_Value;
-
-extern lv_obj_t * ui_RAMLabel_Prefix;
-extern lv_obj_t * ui_RAMLabel_Value;
-
-extern lv_obj_t * ui_TempLabel_Prefix;
-extern lv_obj_t * ui_TempLabel_Value;
-
-extern lv_obj_t * ui_NetLabel_Prefix;
-extern lv_obj_t * ui_NetLabel_Value;
-
-extern lv_obj_t * ui_BatIcon;
-extern lv_obj_t * ui_BatLabel_Value;
-
 // Functions
 void ui_hardware_monitor_init(void);
 

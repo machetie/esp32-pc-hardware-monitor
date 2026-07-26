@@ -26,6 +26,34 @@ pio run -t upload
 pio device monitor
 ```
 
+### Firmware Themes
+
+The default `classic` theme keeps the original large six-row layout. Build or upload a theme with its PlatformIO environment:
+
+| Theme | Layout |
+| --- | --- |
+| `classic` | Original large six-row monitor layout. |
+| `telemetry` | Dense cyberpunk dashboard with CPU/GPU bars and larger primary values. |
+| `terminal` | High-contrast green VT323 diagnostic rows. |
+| `neon-status` | Classic layout with navy, magenta, and cyan Synthwave styling. |
+
+```bash
+pio run -e classic
+pio run -e telemetry
+pio run -e terminal
+pio run -e neon-status
+```
+
+Upload a selected theme by adding `-t upload`. Stop the PC monitor first because it owns the ESP serial port:
+
+```bash
+sudo systemctl stop pc-hardware-monitor.service
+pio run -e neon-status -t upload
+sudo systemctl start pc-hardware-monitor.service
+```
+
+The configured upload port uses the ESP's persistent `/dev/serial/by-id/` path, so it remains correct when `/dev/ttyACM*` numbering changes.
+
 ### 2. PC Monitor Script
 
 Install Python dependencies:

@@ -32,26 +32,26 @@ static lv_color_t get_pct_color(float pct) {
 }
 
 // UI Elements
-lv_obj_t * ui_HWMonScreen;
+static lv_obj_t * ui_HWMonScreen;
 
 // Dual-label approach: Prefix (white) + Value (dynamic color)
-lv_obj_t * ui_CPULabel_Prefix;
-lv_obj_t * ui_CPULabel_Value;
+static lv_obj_t * ui_CPULabel_Prefix;
+static lv_obj_t * ui_CPULabel_Value;
 
-lv_obj_t * ui_GPULabel_Prefix;
-lv_obj_t * ui_GPULabel_Value;
+static lv_obj_t * ui_GPULabel_Prefix;
+static lv_obj_t * ui_GPULabel_Value;
 
-lv_obj_t * ui_RAMLabel_Prefix;
-lv_obj_t * ui_RAMLabel_Value;
+static lv_obj_t * ui_RAMLabel_Prefix;
+static lv_obj_t * ui_RAMLabel_Value;
 
-lv_obj_t * ui_TempLabel_Prefix;
-lv_obj_t * ui_TempLabel_Value;
+static lv_obj_t * ui_TempLabel_Prefix;
+static lv_obj_t * ui_TempLabel_Value;
 
-lv_obj_t * ui_NetLabel_Prefix;
-lv_obj_t * ui_NetLabel_Value;
+static lv_obj_t * ui_NetLabel_Prefix;
+static lv_obj_t * ui_NetLabel_Value;
 
-lv_obj_t * ui_BatIcon;
-lv_obj_t * ui_BatLabel_Value;
+static lv_obj_t * ui_BatIcon;
+static lv_obj_t * ui_BatLabel_Value;
 
 void ui_hardware_monitor_init(void) {
     // Create main screen
@@ -176,23 +176,18 @@ void ui_update_cpu(float percent, float freq_ghz) {
 void ui_update_gpu(float percent) {
     char text[32];
 
-    // Display GPU percentage or unavailable message - value only
+    // Display GPU percentage - value only
     if (percent > 0.0) {
         snprintf(text, sizeof(text), "%.1f%%", percent);
     } else {
-        snprintf(text, sizeof(text), "(not available)");
+        snprintf(text, sizeof(text), "0.0%%");
     }
 
     lv_label_set_text(ui_GPULabel_Value, text);
 
     // Set color based on GPU percentage (value label only)
-    if (percent > 0.0) {
-        lv_color_t col = get_pct_color(percent);
-        lv_obj_set_style_text_color(ui_GPULabel_Value, col, LV_PART_MAIN | LV_STATE_DEFAULT);
-    } else {
-        // Gray color for unavailable
-        lv_obj_set_style_text_color(ui_GPULabel_Value, lv_color_make(128, 128, 128), LV_PART_MAIN | LV_STATE_DEFAULT);
-    }
+    lv_color_t col = get_pct_color(percent);
+    lv_obj_set_style_text_color(ui_GPULabel_Value, col, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
 void ui_update_ram(float percent, float used_gb, float total_gb) {
